@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CloudShield — Cloud Security Threat Detection</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<style>
+  :root {
+    --bg:#080c12;--bg2:#0d1117;--panel:#111820;--border:#1e2d3d;
+    --accent:#00d4ff;--accent2:#00ff9d;--accent3:#ff6b35;--danger:#ff3860;
+    --text:#c9d1d9;--text2:#8b949e;
+    --font-mono:'Share Tech Mono',monospace;--font-head:'Rajdhani',sans-serif;
+    --font-body:'Inter',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:var(--font-body);min-height:100vh;overflow-x:hidden;}
+
+  /* GRID BG */
+  body::before {
+    content:'';position:fixed;inset:0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(0,212,255,0.03) 1px,transparent 1px);
+    background-size:40px 40px;
+    pointer-events:none;z-index:0;
+  }
+
+  nav {
+    position:fixed;top:0;left:0;right:0;z-index:100;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:16px 40px;
+    background:rgba(8,12,18,0.85);
+    backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--border);
+  }
+  .logo {display:flex;align-items:center;gap:10px;text-decoration:none;}
+  .logo i {color:var(--accent);font-size:24px;text-shadow:0 0 20px rgba(0,212,255,0.5);}
+  .logo-text {font-family:var(--font-head);font-size:22px;font-weight:700;color:#fff;letter-spacing:1px;}
+  .logo-text span {color:var(--accent);}
+  .nav-links {display:flex;align-items:center;gap:12px;}
+  .nav-links a {
+    text-decoration:none;padding:8px 18px;border-radius:4px;
+    font-size:14px;font-weight:500;transition:all 0.2s;
+  }
+  .nav-links .btn-login {color:var(--accent);border:1px solid var(--accent);}
+  .nav-links .btn-login:hover {background:rgba(0,212,255,0.08);}
+  .nav-links .btn-register {background:var(--accent);color:#000;}
+  .nav-links .btn-register:hover {background:#00b8e0;box-shadow:0 0 20px rgba(0,212,255,0.4);}
+
+  /* HERO */
+  .hero {
+    min-height:100vh;display:flex;align-items:center;justify-content:center;
+    flex-direction:column;text-align:center;padding:80px 20px 40px;
+    position:relative;z-index:1;
+  }
+  .hero-badge {
+    display:inline-flex;align-items:center;gap:8px;
+    background:rgba(0,255,157,0.08);border:1px solid rgba(0,255,157,0.2);
+    padding:6px 16px;border-radius:20px;
+    font-family:var(--font-mono);font-size:12px;color:var(--accent2);
+    margin-bottom:28px;letter-spacing:1px;
+  }
+  .hero-badge .dot {width:6px;height:6px;background:var(--accent2);border-radius:50%;animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+  h1 {
+    font-family:var(--font-head);font-size:clamp(38px,7vw,80px);font-weight:700;
+    color:#fff;line-height:1.05;letter-spacing:-1px;margin-bottom:20px;
+  }
+  h1 span {
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  }
+  .hero-sub {
+    font-size:18px;color:var(--text2);max-width:600px;line-height:1.6;
+    margin-bottom:40px;font-weight:300;
+  }
+  .hero-btns {display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
+  .hero-btns a {
+    padding:14px 30px;border-radius:4px;font-size:15px;font-weight:600;
+    text-decoration:none;transition:all 0.25s;display:flex;align-items:center;gap:8px;
+  }
+  .btn-cta {background:var(--accent);color:#000;}
+  .btn-cta:hover {background:#00b8e0;box-shadow:0 0 30px rgba(0,212,255,0.5);transform:translateY(-2px);}
+  .btn-cta2 {background:transparent;color:#fff;border:1px solid var(--border);}
+  .btn-cta2:hover {border-color:var(--accent);color:var(--accent);}
+
+  /* TERMINAL */
+  .terminal {
+    width:min(700px,90vw);margin:60px auto 0;
+    background:var(--bg2);border:1px solid var(--border);border-radius:8px;
+    overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.5);
+  }
+  .term-bar {
+    background:var(--panel);padding:10px 16px;
+    display:flex;align-items:center;gap:8px;
+    border-bottom:1px solid var(--border);
+  }
+  .term-dot {width:12px;height:12px;border-radius:50%;}
+  .term-body {padding:20px;font-family:var(--font-mono);font-size:13px;line-height:1.8;}
+  .t-prompt {color:var(--accent2);}
+  .t-cmd {color:var(--text);}
+  .t-out {color:var(--text2);}
+  .t-danger {color:var(--danger);}
+  .t-warn {color:#ffdd57;}
+  .t-ok {color:var(--accent2);}
+  .cursor {animation:blink 1s step-end infinite;color:var(--accent);}
+  @keyframes blink{50%{opacity:0;}}
+
+  /* FEATURES */
+  .features {padding:80px 40px;position:relative;z-index:1;}
+  .section-title {
+    font-family:var(--font-head);font-size:clamp(28px,4vw,42px);font-weight:700;
+    color:#fff;text-align:center;margin-bottom:10px;
+  }
+  .section-sub {text-align:center;color:var(--text2);margin-bottom:50px;font-size:16px;}
+  .features-grid {
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+    gap:20px;max-width:1100px;margin:0 auto;
+  }
+  .feature-card {
+    background:var(--panel);border:1px solid var(--border);border-radius:6px;
+    padding:28px;position:relative;overflow:hidden;
+    transition:transform 0.2s,border-color 0.2s;
+  }
+  .feature-card::before {
+    content:'';position:absolute;top:0;left:0;right:0;height:2px;
+    background:linear-gradient(90deg,var(--accent),var(--accent2));
+    transform:scaleX(0);transform-origin:left;transition:transform 0.3s;
+  }
+  .feature-card:hover {transform:translateY(-4px);border-color:var(--accent);}
+  .feature-card:hover::before {transform:scaleX(1);}
+  .feature-icon {font-size:30px;color:var(--accent);margin-bottom:14px;}
+  .feature-title {font-family:var(--font-head);font-size:18px;font-weight:700;color:#fff;margin-bottom:8px;}
+  .feature-desc {font-size:14px;color:var(--text2);line-height:1.6;}
+
+  /* MODEL STATS */
+  .model-stats {padding:60px 40px;position:relative;z-index:1;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
+  .model-grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;max-width:900px;margin:0 auto;}
+  .model-card {
+    background:var(--panel);border:1px solid var(--border);
+    border-radius:6px;padding:24px;text-align:center;
+  }
+  .model-acc {font-family:var(--font-mono);font-size:42px;color:var(--accent);line-height:1;}
+  .model-name {font-family:var(--font-head);font-size:16px;font-weight:700;color:#fff;margin:8px 0 4px;}
+  .model-type {font-size:12px;color:var(--text2);}
+
+  footer {
+    padding:30px 40px;text-align:center;
+    font-family:var(--font-mono);font-size:12px;color:var(--text2);
+    border-top:1px solid var(--border);position:relative;z-index:1;
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="logo" href="{% url 'home' %}">
+    <i class="fas fa-shield-halved"></i>
+    <span class="logo-text">Cloud<span>Shield</span></span>
+  </a>
+  <div class="nav-links">
+    {% if user.is_authenticated %}
+    <a href="{% url 'dashboard' %}" class="btn-login">Dashboard</a>
+    <a href="{% url 'logout' %}" class="btn-login">Logout</a>
+    {% else %}
+    <a href="{% url 'login' %}" class="btn-login">Login</a>
+    <a href="{% url 'register' %}" class="btn-register">Get Started</a>
+    {% endif %}
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-badge"><span class="dot"></span> Hybrid Deep Learning Security Platform</div>
+  <h1>Detect Cloud Threats<br>Before They Strike <span>.</span></h1>
+  <p class="hero-sub">
+    Combining CNN, LSTM, and Autoencoder models for real-time cloud intrusion detection,
+    insider threat analysis, and network anomaly classification.
+  </p>
+  <div class="hero-btns">
+    <a href="{% url 'register' %}" class="btn-cta"><i class="fas fa-rocket"></i> Launch Platform</a>
+    <a href="#features" class="btn-cta2"><i class="fas fa-info-circle"></i> Learn More</a>
+  </div>
+
+  <div class="terminal">
+    <div class="term-bar">
+      <div class="term-dot" style="background:#ff5f57"></div>
+      <div class="term-dot" style="background:#febc2e"></div>
+      <div class="term-dot" style="background:#28c840"></div>
+      <span style="font-family:var(--font-mono);font-size:12px;color:var(--text2);margin-left:8px">cloudshield@v2.0 — threat_monitor</span>
+    </div>
+    <div class="term-body">
+      <div><span class="t-prompt">$ </span><span class="t-cmd">cloudshield --scan --dataset cloud_security.csv</span></div>
+      <div class="t-out">[✓] Loading dataset: 1000 samples, 15 features</div>
+      <div class="t-out">[✓] Preprocessing: encoding, scaling, splitting</div>
+      <div class="t-out">[◈] Training Hybrid DL model...</div>
+      <div class="t-ok">[✓] CNN Accuracy: 92.3%</div>
+      <div class="t-ok">[✓] LSTM Accuracy: 94.1%</div>
+      <div class="t-ok">[✓] Autoencoder Accuracy: 90.8%</div>
+      <div class="t-ok">[✓] Hybrid Accuracy: <strong style="color:var(--accent2)">97.4%</strong></div>
+      <div class="t-out">&nbsp;</div>
+      <div><span class="t-danger">[!] Intrusion detected</span> — src:192.168.10.149 proto:FTP</div>
+      <div><span class="t-warn">[~] Insider threat</span> — user_17 anomaly_score:0.19</div>
+      <div class="t-out">[✓] Report saved → results/report_2026.pdf</div>
+      <div><span class="t-prompt">$ </span><span class="cursor">█</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="model-stats" id="models">
+  <div class="section-title">Model Performance</div>
+  <div class="section-sub">Benchmark results on cloud_security_dataset</div>
+  <div class="model-grid">
+    <div class="model-card"><div class="model-acc">92%</div><div class="model-name">CNN</div><div class="model-type">Spatial Pattern Detection</div></div>
+    <div class="model-card"><div class="model-acc">94%</div><div class="model-name">LSTM</div><div class="model-type">Temporal Attack Patterns</div></div>
+    <div class="model-card"><div class="model-acc">91%</div><div class="model-name">Autoencoder</div><div class="model-type">Anomaly Detection</div></div>
+    <div class="model-card" style="border-color:rgba(0,212,255,0.3)">
+      <div class="model-acc" style="color:var(--accent2)">97%</div>
+      <div class="model-name">Hybrid</div>
+      <div class="model-type">CNN + LSTM + AE Combined</div>
+    </div>
+  </div>
+</section>
+
+<section class="features" id="features">
+  <div class="section-title">Platform Capabilities</div>
+  <div class="section-sub">End-to-end security intelligence pipeline</div>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon"><i class="fas fa-upload"></i></div>
+      <div class="feature-title">Dataset Management</div>
+      <div class="feature-desc">Upload and preview CSV datasets. Auto-detect columns, check null values, and view label distributions instantly.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><i class="fas fa-brain"></i></div>
+      <div class="feature-title">Hybrid Deep Learning</div>
+      <div class="feature-desc">Train CNN, LSTM, Autoencoder, and Hybrid models with one click. All preprocessing is handled automatically.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><i class="fas fa-chart-bar"></i></div>
+      <div class="feature-title">Visual Analytics</div>
+      <div class="feature-desc">Confusion matrices, training curves, accuracy comparison charts, and attack distribution pie charts.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><i class="fas fa-crosshairs"></i></div>
+      <div class="feature-title">Attack Prediction</div>
+      <div class="feature-desc">Upload test data and instantly classify: Intrusion, Insider Threat, DDoS, or Normal — with confidence scores.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><i class="fas fa-shield-alt"></i></div>
+      <div class="feature-title">Model Comparison</div>
+      <div class="feature-desc">Compare all trained models side-by-side on Accuracy, Precision, Recall, and F1 Score with interactive charts.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><i class="fas fa-lock"></i></div>
+      <div class="feature-title">Secure & Isolated</div>
+      <div class="feature-desc">User authentication, session management, and isolated dataset storage. Each user manages their own models.</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>CloudShield — Hybrid Deep Learning Cloud Security System &copy; 2026 | Built with Django + scikit-learn</p>
+</footer>
+
+</body>
+</html>

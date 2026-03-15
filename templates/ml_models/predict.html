@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% block title %}Predict Attacks — CloudShield{% endblock %}
+{% block page_title %}<i class="fas fa-crosshairs" style="color:var(--accent);margin-right:8px"></i>Predict Attacks{% endblock %}
+{% block content %}
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header"><div class="card-title"><i class="fas fa-upload"></i> Upload Test Data</div></div>
+    {% if not saved_models %}
+    <div class="alert alert-warning"><i class="fas fa-exclamation-triangle"></i> No trained models available. <a href="{% url 'train_model' %}" style="color:var(--warn)">Train a model</a> first.</div>
+    {% else %}
+    <form method="post" enctype="multipart/form-data" id="predictForm">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-brain"></i> Select Model</label>
+        <select name="model_id" class="form-control" required>
+          <option value="">— Choose trained model —</option>
+          {% for m in saved_models %}
+          <option value="{{ m.pk }}">{{ m.get_model_name_display }} — {{ m.accuracy }}% acc ({{ m.created_at|date:"d M Y" }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-file-csv"></i> Test CSV File</label>
+        <div class="drop-zone" id="dropZone" onclick="document.getElementById('testFile').click()">
+          <i class="fas fa-cloud-upload-alt"></i>
+          <div style="font-size:15px;color:var(--text);margin-bottom:4px;">Drop test CSV here</div>
+          <div class="text-muted" style="font-size:12px;">Same columns as training data (label column optional)</div>
+          <div id="fileName" style="margin-top:8px;font-family:var(--font-mono);font-size:13px;color:var(--accent2);"></div>
+        </div>
+        <input type="file" name="file" id="testFile" accept=".csv" style="display:none" required onchange="showFile(this)">
+      </div>
+      <button type="submit" class="btn btn-primary w-100" style="padding:12px;justify-content:center;font-size:15px;">
+        <i class="fas fa-crosshairs"></i> Run Prediction
+      </button>
+    </form>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title"><i class="fas fa-info-circle"></i> How It Works</div></div>
+    <div style="display:grid;gap:14px;">
+      {% for s in steps %}
+      <div style="display:flex;align-items:flex-start;gap:14px;">
+        <div style="width:30px;height:30px;border-radius:50%;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:var(--font-mono);font-size:13px;color:var(--accent);">{{ s.0 }}</div>
+        <div>
+          <div style="font-weight:600;color:#fff;font-size:14px;margin-bottom:3px;">{{ s.1 }}</div>
+          <div class="text-muted" style="font-size:13px;">{{ s.2 }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+{% if predictions %}
+<div class="card">
+  <div class="card-header">
+    <div class="card-title"><i class="fas fa-list-check"></i> Prediction Results ({{ predictions|length }} records)</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      {% for c in classes %}
+      <span class="badge badge-{% if c == 'Normal' %}success{% elif c == 'Intrusion' %}danger{% else %}warning{% endif %}">{{ c }}</span>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div id="predSummary" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;"></div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Row</th><th>Predicted Label</th><th>Confidence</th><th>Risk</th></tr>
+      </thead>
+      <tbody>
+        {% for p in predictions %}
+        <tr>
+          <td class="mono">{{ p.row }}</td>
+          <td>
+            <span class="badge badge-{% if p.predicted_label == 'Normal' %}success{% elif p.predicted_label == 'Intrusion' %}danger{% else %}warning{% endif %}">
+              {{ p.predicted_label }}
+            </span>
+          </td>
+          <td class="mono">
+            {% if p.confidence != 'N/A' %}
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="width:80px;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;">
+                <div style="width:{{ p.confidence }}%;height:100%;background:{% if p.confidence > 80 %}var(--accent2){% elif p.confidence > 60 %}var(--warn){% else %}var(--danger){% endif %};border-radius:3px;"></div>
+              </div>
+              {{ p.confidence }}%
+            </div>
+            {% else %}N/A{% endif %}
+          </td>
+          <td>
+            {% if p.predicted_label == 'Normal' %}
+            <span style="color:var(--accent2);font-size:12px;font-family:var(--font-mono);">● LOW</span>
+            {% elif p.predicted_label == 'Intrusion' %}
+            <span style="color:var(--danger);font-size:12px;font-family:var(--font-mono);">▲ HIGH</span>
+            {% else %}
+            <span style="color:var(--warn);font-size:12px;font-family:var(--font-mono);">◆ MEDIUM</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<script>
+function showFile(input) {
+  if (input.files[0]) {
+    document.getElementById('fileName').textContent = '✓ ' + input.files[0].name;
+    document.getElementById('dropZone').style.borderColor = 'var(--accent2)';
+  }
+}
+const dz = document.getElementById('dropZone');
+if (dz) {
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault(); dz.classList.remove('dragover');
+    const f = e.dataTransfer.files[0];
+    if (f) {
+      const dt = new DataTransfer(); dt.items.add(f);
+      document.getElementById('testFile').files = dt.files;
+      showFile(document.getElementById('testFile'));
+    }
+  });
+}
+
+// Build prediction summary
+const summaryEl = document.getElementById('predSummary');
+if (summaryEl) {
+  const rows = document.querySelectorAll('tbody tr');
+  const counts = {};
+  rows.forEach(r => {
+    const label = r.cells[1].innerText.trim();
+    counts[label] = (counts[label] || 0) + 1;
+  });
+  const colors = { Normal: 'var(--accent2)', Intrusion: 'var(--danger)' };
+  Object.entries(counts).forEach(([k, v]) => {
+    const el = document.createElement('div');
+    el.style.cssText = `background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:10px 18px;text-align:center;`;
+    el.innerHTML = `<div style="font-family:var(--font-mono);font-size:26px;color:${colors[k]||'var(--warn)'};">${v}</div><div style="font-size:11px;color:var(--text2);margin-top:3px;">${k}</div>`;
+    summaryEl.appendChild(el);
+  });
+}
+</script>
+{% endblock %}

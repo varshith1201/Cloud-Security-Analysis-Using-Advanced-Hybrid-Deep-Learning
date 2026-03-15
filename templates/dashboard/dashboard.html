@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard — CloudShield{% endblock %}
+{% block page_title %}<i class="fas fa-tachometer-alt" style="color:var(--accent);margin-right:8px"></i>Dashboard{% endblock %}
+{% block content %}
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-value">{{ total_datasets }}</div>
+    <div class="stat-label">Datasets Uploaded</div>
+    <i class="fas fa-database stat-icon"></i>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ total_models }}</div>
+    <div class="stat-label">Models Trained</div>
+    <i class="fas fa-brain stat-icon"></i>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value" style="color:var(--accent2)">{{ best_accuracy }}%</div>
+    <div class="stat-label">Best Accuracy</div>
+    <i class="fas fa-trophy stat-icon"></i>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value" style="color:var(--accent3)">4</div>
+    <div class="stat-label">Available Models</div>
+    <i class="fas fa-layer-group stat-icon"></i>
+  </div>
+</div>
+
+<div class="grid-2">
+  <!-- Accuracy Chart -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><i class="fas fa-chart-bar"></i>Model Accuracy Comparison</div>
+    </div>
+    {% if total_models > 0 %}
+    <canvas id="accChart" height="200"></canvas>
+    {% else %}
+    <div style="text-align:center;padding:40px;color:var(--text2);">
+      <i class="fas fa-brain" style="font-size:40px;margin-bottom:12px;display:block;opacity:0.3"></i>
+      No models trained yet. <a href="{% url 'train_model' %}" style="color:var(--accent)">Train your first model</a>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Label Distribution -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><i class="fas fa-chart-pie"></i>Attack Distribution</div>
+    </div>
+    {% if label_dist_keys != "[]" %}
+    <canvas id="pieChart" height="200"></canvas>
+    {% else %}
+    <div style="text-align:center;padding:40px;color:var(--text2);">
+      <i class="fas fa-database" style="font-size:40px;margin-bottom:12px;display:block;opacity:0.3"></i>
+      No dataset uploaded yet. <a href="{% url 'upload_dataset' %}" style="color:var(--accent)">Upload a dataset</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Recent Results -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title"><i class="fas fa-history"></i>Recent Model Results</div>
+    <a href="{% url 'all_results' %}" class="btn btn-outline btn-sm">View All</a>
+  </div>
+  {% if latest_results %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Model</th><th>Dataset</th><th>Accuracy</th>
+          <th>Precision</th><th>Recall</th><th>F1</th><th>Trained</th><th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in latest_results %}
+        <tr>
+          <td><span class="badge badge-info">{{ r.get_model_name_display }}</span></td>
+          <td class="text-muted">{{ r.dataset.name }}</td>
+          <td class="mono" style="color:var(--accent2)">{{ r.accuracy }}%</td>
+          <td class="mono">{{ r.precision }}%</td>
+          <td class="mono">{{ r.recall }}%</td>
+          <td class="mono">{{ r.f1_score }}%</td>
+          <td class="text-muted" style="font-size:12px">{{ r.created_at|date:"d M Y" }}</td>
+          <td><a href="{% url 'model_result' r.pk %}" class="btn btn-outline btn-sm"><i class="fas fa-eye"></i></a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="text-muted" style="text-align:center;padding:30px;">No models trained yet.</p>
+  {% endif %}
+</div>
+
+<!-- Quick Actions -->
+<div class="grid-3">
+  <a href="{% url 'upload_dataset' %}" class="card" style="text-decoration:none;text-align:center;cursor:pointer;transition:border-color 0.2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+    <i class="fas fa-upload" style="font-size:32px;color:var(--accent);margin-bottom:10px;display:block"></i>
+    <div class="card-title">Upload Dataset</div>
+    <p class="text-muted mt-4">Add a new CSV dataset for analysis</p>
+  </a>
+  <a href="{% url 'train_model' %}" class="card" style="text-decoration:none;text-align:center;cursor:pointer;transition:border-color 0.2s" onmouseover="this.style.borderColor='var(--accent2)'" onmouseout="this.style.borderColor='var(--border)'">
+    <i class="fas fa-brain" style="font-size:32px;color:var(--accent2);margin-bottom:10px;display:block"></i>
+    <div class="card-title">Train Model</div>
+    <p class="text-muted mt-4">Train CNN, LSTM, AE, or Hybrid model</p>
+  </a>
+  <a href="{% url 'predict' %}" class="card" style="text-decoration:none;text-align:center;cursor:pointer;transition:border-color 0.2s" onmouseover="this.style.borderColor='var(--accent3)'" onmouseout="this.style.borderColor='var(--border)'">
+    <i class="fas fa-crosshairs" style="font-size:32px;color:var(--accent3);margin-bottom:10px;display:block"></i>
+    <div class="card-title">Predict Attacks</div>
+    <p class="text-muted mt-4">Run predictions on new network data</p>
+  </a>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const CHART_DEFAULTS = {
+  color: '#8b949e',
+  plugins: { legend: { labels: { color: '#8b949e', font: { family: 'Share Tech Mono' } } } },
+  scales: {
+    x: { ticks: { color: '#8b949e' }, grid: { color: 'rgba(255,255,255,0.04)' } },
+    y: { ticks: { color: '#8b949e' }, grid: { color: 'rgba(255,255,255,0.04)' }, min: 0, max: 100 }
+  }
+};
+
+{% if total_models > 0 %}
+new Chart(document.getElementById('accChart'), {
+  type: 'bar',
+  data: {
+    labels: {{ chart_labels|safe }},
+    datasets: [{
+      label: 'Accuracy (%)',
+      data: {{ chart_acc|safe }},
+      backgroundColor: 'rgba(0,212,255,0.25)',
+      borderColor: '#00d4ff',
+      borderWidth: 2,
+      borderRadius: 4,
+    }]
+  },
+  options: { ...CHART_DEFAULTS, responsive: true }
+});
+{% endif %}
+
+{% if label_dist_keys != "[]" %}
+new Chart(document.getElementById('pieChart'), {
+  type: 'doughnut',
+  data: {
+    labels: {{ label_dist_keys|safe }},
+    datasets: [{
+      data: {{ label_dist_vals|safe }},
+      backgroundColor: ['rgba(255,56,96,0.7)','rgba(0,212,255,0.7)','rgba(0,255,157,0.7)','rgba(255,221,87,0.7)','rgba(255,107,53,0.7)'],
+      borderColor: '#131920', borderWidth: 2,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { labels: { color: '#8b949e', font: { family: 'Share Tech Mono', size: 12 }, padding: 16 } }
+    }
+  }
+});
+{% endif %}
+</script>
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title %}Upload Dataset — CloudShield{% endblock %}
+{% block page_title %}<i class="fas fa-upload" style="color:var(--accent);margin-right:8px"></i>Upload Dataset{% endblock %}
+{% block content %}
+<div style="max-width:600px;margin:0 auto;">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><i class="fas fa-file-csv"></i> New Dataset</div>
+    </div>
+    <form method="post" enctype="multipart/form-data" id="uploadForm">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label">Dataset Name</label>
+        <input type="text" name="name" class="form-control" placeholder="e.g. Cloud Security Dataset 2026" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">CSV File</label>
+        <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+          <i class="fas fa-cloud-upload-alt"></i>
+          <div style="font-size:16px;color:var(--text);margin-bottom:6px;">Drop your CSV file here</div>
+          <div class="text-muted">or click to browse</div>
+          <div id="fileName" style="margin-top:10px;font-family:var(--font-mono);font-size:13px;color:var(--accent2);"></div>
+        </div>
+        <input type="file" name="file" id="fileInput" accept=".csv" style="display:none" required onchange="showFile(this)">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description (optional)</label>
+        <textarea name="description" class="form-control" placeholder="Describe this dataset..."></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:12px;">
+        <i class="fas fa-upload"></i> Upload Dataset
+      </button>
+    </form>
+  </div>
+
+  <div class="card">
+    <div class="card-title" style="margin-bottom:14px;"><i class="fas fa-info-circle"></i> Expected Format</div>
+    <p class="text-muted" style="margin-bottom:14px;">Your CSV should contain a <code style="color:var(--accent);background:var(--bg3);padding:2px 6px;border-radius:3px;">label</code> column as the target. Example columns:</p>
+    <div style="font-family:var(--font-mono);font-size:12px;background:var(--bg3);padding:14px;border-radius:4px;border:1px solid var(--border);color:var(--accent2);line-height:2;">
+      timestamp, user_id, source_ip, destination_ip, protocol,<br>
+      bytes_transferred, login_attempts, failed_logins,<br>
+      cpu_usage, memory_usage, network_latency, anomaly_score,<br>
+      <span style="color:var(--accent)">label</span> → Normal | Intrusion | Insider | DDoS
+    </div>
+  </div>
+</div>
+
+<script>
+function showFile(input) {
+  if (input.files[0]) {
+    document.getElementById('fileName').textContent = '✓ ' + input.files[0].name;
+    document.getElementById('dropZone').style.borderColor = 'var(--accent2)';
+  }
+}
+const dz = document.getElementById('dropZone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('dragover');
+  const f = e.dataTransfer.files[0];
+  if (f) {
+    const dt = new DataTransfer(); dt.items.add(f);
+    document.getElementById('fileInput').files = dt.files;
+    showFile(document.getElementById('fileInput'));
+  }
+});
+</script>
+{% endblock %}

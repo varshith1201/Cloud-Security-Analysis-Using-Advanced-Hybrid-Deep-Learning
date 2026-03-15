@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% block title %}{{ result.get_model_name_display }} Result{% endblock %}
+{% block page_title %}<i class="fas fa-chart-bar" style="color:var(--accent);margin-right:8px"></i>Model Result{% endblock %}
+{% block content %}
+
+<div class="flex-between mb-4">
+  <a href="{% url 'all_results' %}" class="btn btn-outline btn-sm"><i class="fas fa-arrow-left"></i> All Results</a>
+  <div style="display:flex;gap:10px;">
+    <a href="{% url 'compare_models' %}" class="btn btn-outline btn-sm"><i class="fas fa-balance-scale"></i> Compare</a>
+    <a href="{% url 'predict' %}" class="btn btn-success btn-sm"><i class="fas fa-crosshairs"></i> Predict</a>
+  </div>
+</div>
+
+<!-- Header card -->
+<div class="card" style="border-top:3px solid var(--accent);">
+  <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+    <div>
+      <div style="font-family:var(--font-mono);font-size:12px;color:var(--text2);letter-spacing:1px;margin-bottom:6px;">MODEL</div>
+      <div style="font-family:var(--font-head);font-size:28px;font-weight:700;color:#fff;">{{ result.get_model_name_display }}</div>
+      <div class="text-muted" style="font-size:13px;margin-top:4px;">Dataset: <strong style="color:var(--text)">{{ result.dataset.name }}</strong> · Trained {{ result.created_at|date:"d M Y, H:i" }}</div>
+    </div>
+    <div style="margin-left:auto;text-align:center;">
+      <div style="font-family:var(--font-mono);font-size:52px;color:var(--accent2);line-height:1;">{{ result.accuracy }}%</div>
+      <div class="text-muted" style="font-size:12px;letter-spacing:1px;">ACCURACY</div>
+    </div>
+  </div>
+</div>
+
+<!-- Metrics -->
+<div class="stats-grid" style="grid-template-columns:repeat(4,1fr);">
+  <div class="stat-card"><div class="stat-value" style="color:var(--accent2)">{{ result.accuracy }}%</div><div class="stat-label">Accuracy</div></div>
+  <div class="stat-card"><div class="stat-value">{{ result.precision }}%</div><div class="stat-label">Precision</div></div>
+  <div class="stat-card"><div class="stat-value">{{ result.recall }}%</div><div class="stat-label">Recall</div></div>
+  <div class="stat-card"><div class="stat-value" style="color:var(--accent)">{{ result.f1_score }}%</div><div class="stat-label">F1 Score</div></div>
+</div>
+
+<div class="grid-2">
+  <!-- Metric Bars -->
+  <div class="card">
+    <div class="card-header"><div class="card-title"><i class="fas fa-tasks"></i> Performance Metrics</div></div>
+    <div class="metric-row">
+      <div class="metric-label"><span>Accuracy</span><span>{{ result.accuracy }}%</span></div>
+      <div class="metric-bar"><div class="metric-fill" style="width:{{ result.accuracy }}%"></div></div>
+    </div>
+    <div class="metric-row">
+      <div class="metric-label"><span>Precision</span><span>{{ result.precision }}%</span></div>
+      <div class="metric-bar"><div class="metric-fill" style="width:{{ result.precision }}%;background:linear-gradient(90deg,var(--accent2),#00b8e0)"></div></div>
+    </div>
+    <div class="metric-row">
+      <div class="metric-label"><span>Recall</span><span>{{ result.recall }}%</span></div>
+      <div class="metric-bar"><div class="metric-fill" style="width:{{ result.recall }}%;background:linear-gradient(90deg,var(--accent3),#ff9558)"></div></div>
+    </div>
+    <div class="metric-row">
+      <div class="metric-label"><span>F1 Score</span><span>{{ result.f1_score }}%</span></div>
+      <div class="metric-bar"><div class="metric-fill" style="width:{{ result.f1_score }}%;background:linear-gradient(90deg,#9b59b6,#3498db)"></div></div>
+    </div>
+    <hr class="divider">
+    <div style="font-family:var(--font-mono);font-size:12px;color:var(--text2);">
+      <div style="margin-bottom:6px;"><span style="color:var(--accent)">Classes:</span> {% for c in classes %}<span class="badge badge-info" style="margin-right:4px;">{{ c }}</span>{% endfor %}</div>
+    </div>
+  </div>
+
+  <!-- Training History -->
+  <div class="card">
+    <div class="card-header"><div class="card-title"><i class="fas fa-chart-line"></i> Training History</div></div>
+    <canvas id="histChart" height="220"></canvas>
+  </div>
+</div>
+
+<!-- Confusion Matrix -->
+{% if result.confusion_matrix_img %}
+<div class="card">
+  <div class="card-header"><div class="card-title"><i class="fas fa-th"></i> Confusion Matrix</div></div>
+  <div style="text-align:center;">
+    <img src="/media/{{ result.confusion_matrix_img }}" alt="Confusion Matrix"
+         style="max-width:100%;border-radius:4px;border:1px solid var(--border);">
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+{% block extra_js %}
+<script>
+const history = {{ history|safe }};
+if (history.train_acc) {
+  new Chart(document.getElementById('histChart'), {
+    type: 'line',
+    data: {
+      labels: Array.from({length: history.train_acc.length}, (_,i) => 'Epoch '+(i+1)),
+      datasets: [
+        { label: 'Train Accuracy', data: history.train_acc.map(v => +(v*100).toFixed(2)),
+          borderColor: '#00d4ff', backgroundColor: 'rgba(0,212,255,0.1)', tension: 0.4, pointRadius: 2, fill: true },
+        { label: 'Val Accuracy', data: history.val_acc.map(v => +(v*100).toFixed(2)),
+          borderColor: '#00ff9d', backgroundColor: 'rgba(0,255,157,0.05)', tension: 0.4, pointRadius: 2, fill: true }
+      ]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        x: { ticks: { color: '#8b949e', maxTicksLimit: 10 }, grid: { color: 'rgba(255,255,255,0.04)' } },
+        y: { ticks: { color: '#8b949e' }, grid: { color: 'rgba(255,255,255,0.04)' }, min: 40, max: 100 }
+      },
+      plugins: { legend: { labels: { color: '#8b949e', font: { family: 'Share Tech Mono' } } } }
+    }
+  });
+}
+</script>
+{% endblock %}

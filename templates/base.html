@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}CloudShield — Hybrid DL Security{% endblock %}</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #080c12;
+    --bg2: #0d1117;
+    --bg3: #131920;
+    --panel: #111820;
+    --border: #1e2d3d;
+    --accent: #00d4ff;
+    --accent2: #00ff9d;
+    --accent3: #ff6b35;
+    --danger: #ff3860;
+    --warn: #ffdd57;
+    --text: #c9d1d9;
+    --text2: #8b949e;
+    --text3: #58a6ff;
+    --glow: 0 0 20px rgba(0,212,255,0.15);
+    --glow2: 0 0 30px rgba(0,255,157,0.1);
+    --font-mono: 'Share Tech Mono', monospace;
+    --font-head: 'Rajdhani', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --radius: 6px;
+    --sidebar-w: 240px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    display: flex;
+    overflow-x: hidden;
+  }
+
+  /* === SIDEBAR === */
+  .sidebar {
+    width: var(--sidebar-w);
+    min-height: 100vh;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0;
+    z-index: 100;
+    transition: transform 0.3s ease;
+  }
+  .sidebar-logo {
+    padding: 24px 20px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-logo .logo-icon {
+    font-size: 28px;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 6px;
+    text-shadow: var(--glow);
+  }
+  .sidebar-logo .logo-text {
+    font-family: var(--font-head);
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 1px;
+  }
+  .sidebar-logo .logo-sub {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--accent2);
+    letter-spacing: 2px;
+    margin-top: 2px;
+  }
+  .sidebar-nav { flex: 1; padding: 16px 0; overflow-y: auto; }
+  .nav-section-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text2);
+    letter-spacing: 2px;
+    padding: 12px 20px 6px;
+    text-transform: uppercase;
+  }
+  .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 20px;
+    color: var(--text2);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+    border-left: 3px solid transparent;
+    position: relative;
+  }
+  .nav-link i { width: 18px; text-align: center; font-size: 15px; }
+  .nav-link:hover, .nav-link.active {
+    color: var(--accent);
+    background: rgba(0,212,255,0.06);
+    border-left-color: var(--accent);
+  }
+  .nav-link.active { color: #fff; }
+  .sidebar-footer {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text2);
+  }
+  .sidebar-footer .user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .avatar {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 13px; color: #000;
+  }
+
+  /* === MAIN CONTENT === */
+  .main-content {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  /* === TOPBAR === */
+  .topbar {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky; top: 0; z-index: 50;
+  }
+  .topbar-title {
+    font-family: var(--font-head);
+    font-size: 22px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.5px;
+  }
+  .topbar-right { display: flex; align-items: center; gap: 14px; }
+  .status-badge {
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(0,255,157,0.08);
+    border: 1px solid rgba(0,255,157,0.2);
+    padding: 5px 12px; border-radius: 20px;
+    font-family: var(--font-mono); font-size: 11px;
+    color: var(--accent2);
+  }
+  .status-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent2);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* === PAGE BODY === */
+  .page-body { padding: 28px; flex: 1; }
+
+  /* === CARDS === */
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+  .card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .card-title {
+    font-family: var(--font-head);
+    font-size: 16px; font-weight: 700;
+    color: #fff; letter-spacing: 0.5px;
+  }
+  .card-title i { color: var(--accent); margin-right: 8px; }
+
+  /* === STAT CARDS === */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .stat-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .stat-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+  .stat-value {
+    font-family: var(--font-mono);
+    font-size: 32px; font-weight: 400;
+    color: var(--accent); line-height: 1;
+    margin-bottom: 6px;
+  }
+  .stat-label {
+    font-size: 12px; color: var(--text2);
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+  .stat-icon {
+    position: absolute; top: 16px; right: 16px;
+    font-size: 28px; color: var(--border);
+  }
+
+  /* === BUTTONS === */
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 9px 20px; border-radius: var(--radius);
+    font-size: 14px; font-weight: 500;
+    cursor: pointer; text-decoration: none;
+    border: 1px solid transparent;
+    transition: all 0.2s; font-family: var(--font-body);
+  }
+  .btn-primary {
+    background: var(--accent); color: #000; border-color: var(--accent);
+  }
+  .btn-primary:hover { background: #00b8e0; box-shadow: 0 0 16px rgba(0,212,255,0.4); }
+  .btn-success {
+    background: var(--accent2); color: #000; border-color: var(--accent2);
+  }
+  .btn-success:hover { background: #00d98a; box-shadow: var(--glow2); }
+  .btn-outline {
+    background: transparent; color: var(--accent); border-color: var(--accent);
+  }
+  .btn-outline:hover { background: rgba(0,212,255,0.08); }
+  .btn-danger {
+    background: var(--danger); color: #fff; border-color: var(--danger);
+  }
+  .btn-danger:hover { background: #e0002f; }
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+
+  /* === FORMS === */
+  .form-group { margin-bottom: 18px; }
+  .form-label {
+    display: block; font-size: 12px; font-weight: 500;
+    color: var(--text2); margin-bottom: 7px;
+    text-transform: uppercase; letter-spacing: 1px;
+    font-family: var(--font-mono);
+  }
+  .form-control {
+    width: 100%; padding: 10px 14px;
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: var(--radius); color: var(--text);
+    font-family: var(--font-body); font-size: 14px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+  }
+  .form-control:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,212,255,0.1); }
+  .form-control option { background: var(--bg3); }
+  textarea.form-control { resize: vertical; min-height: 80px; }
+
+  /* === TABLES === */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    background: var(--bg3); color: var(--text2);
+    font-family: var(--font-mono); font-size: 11px;
+    letter-spacing: 1px; text-transform: uppercase;
+    padding: 10px 14px; border-bottom: 1px solid var(--border);
+    text-align: left; white-space: nowrap;
+  }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; }
+  tbody tr:hover { background: rgba(0,212,255,0.03); }
+  tbody td { padding: 10px 14px; color: var(--text); }
+  .mono { font-family: var(--font-mono); font-size: 12px; color: var(--accent); }
+
+  /* === BADGES === */
+  .badge {
+    display: inline-block; padding: 2px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 600; font-family: var(--font-mono);
+    letter-spacing: 0.5px;
+  }
+  .badge-danger { background: rgba(255,56,96,0.15); color: var(--danger); border: 1px solid rgba(255,56,96,0.3); }
+  .badge-success { background: rgba(0,255,157,0.1); color: var(--accent2); border: 1px solid rgba(0,255,157,0.25); }
+  .badge-warning { background: rgba(255,221,87,0.1); color: var(--warn); border: 1px solid rgba(255,221,87,0.25); }
+  .badge-info { background: rgba(0,212,255,0.1); color: var(--accent); border: 1px solid rgba(0,212,255,0.25); }
+
+  /* === ALERTS === */
+  .alert {
+    padding: 12px 16px; border-radius: var(--radius);
+    font-size: 13px; margin-bottom: 16px;
+    border-left: 3px solid;
+  }
+  .alert-success { background: rgba(0,255,157,0.06); border-color: var(--accent2); color: var(--accent2); }
+  .alert-danger { background: rgba(255,56,96,0.07); border-color: var(--danger); color: var(--danger); }
+  .alert-info { background: rgba(0,212,255,0.07); border-color: var(--accent); color: var(--accent); }
+  .alert-warning { background: rgba(255,221,87,0.07); border-color: var(--warn); color: var(--warn); }
+
+  /* === GRID LAYOUTS === */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  @media (max-width: 900px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  }
+
+  /* === METRIC BARS === */
+  .metric-row { margin-bottom: 14px; }
+  .metric-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px; }
+  .metric-label span:first-child { color: var(--text2); font-family: var(--font-mono); }
+  .metric-label span:last-child { color: var(--accent); font-family: var(--font-mono); font-weight: 600; }
+  .metric-bar { height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; }
+  .metric-fill {
+    height: 100%; border-radius: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 1s ease;
+  }
+
+  /* === LOADING === */
+  .spinner {
+    width: 32px; height: 32px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 20px auto;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* === SCROLLBAR === */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg2); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+  /* === MISC === */
+  .text-accent { color: var(--accent); }
+  .text-accent2 { color: var(--accent2); }
+  .text-danger { color: var(--danger); }
+  .text-muted { color: var(--text2); font-size: 13px; }
+  .mono-text { font-family: var(--font-mono); }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+  .flex-between { display: flex; align-items: center; justify-content: space-between; }
+  .flex-center { display: flex; align-items: center; gap: 10px; }
+  .mt-4 { margin-top: 16px; }
+  .mb-4 { margin-bottom: 16px; }
+  .fw-700 { font-weight: 700; }
+  .w-100 { width: 100%; }
+
+  /* === FILE DROP ZONE === */
+  .drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  .drop-zone:hover, .drop-zone.dragover {
+    border-color: var(--accent);
+    background: rgba(0,212,255,0.04);
+  }
+  .drop-zone i { font-size: 40px; color: var(--accent); margin-bottom: 10px; }
+</style>
+{% block extra_css %}{% endblock %}
+</head>
+<body>
+
+{% if user.is_authenticated %}
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <i class="fas fa-shield-halved logo-icon"></i>
+    <div class="logo-text">CloudShield</div>
+    <div class="logo-sub">HYBRID DL SYSTEM</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Navigation</div>
+    <a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+      <i class="fas fa-tachometer-alt"></i> Dashboard
+    </a>
+    <div class="nav-section-label">Dataset</div>
+    <a href="{% url 'upload_dataset' %}" class="nav-link {% if request.resolver_match.url_name == 'upload_dataset' %}active{% endif %}">
+      <i class="fas fa-upload"></i> Upload Dataset
+    </a>
+    <a href="{% url 'list_datasets' %}" class="nav-link {% if request.resolver_match.url_name == 'list_datasets' %}active{% endif %}">
+      <i class="fas fa-database"></i> My Datasets
+    </a>
+    <div class="nav-section-label">Models</div>
+    <a href="{% url 'train_model' %}" class="nav-link {% if request.resolver_match.url_name == 'train_model' %}active{% endif %}">
+      <i class="fas fa-brain"></i> Train Model
+    </a>
+    <a href="{% url 'all_results' %}" class="nav-link {% if request.resolver_match.url_name == 'all_results' %}active{% endif %}">
+      <i class="fas fa-chart-bar"></i> Results
+    </a>
+    <a href="{% url 'compare_models' %}" class="nav-link {% if request.resolver_match.url_name == 'compare_models' %}active{% endif %}">
+      <i class="fas fa-chart-line"></i> Compare Models
+    </a>
+    <a href="{% url 'predict' %}" class="nav-link {% if request.resolver_match.url_name == 'predict' %}active{% endif %}">
+      <i class="fas fa-crosshairs"></i> Predict Attacks
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-info">
+      <div class="avatar">{{ user.username.0|upper }}</div>
+      <div>
+        <div style="font-weight:600;color:#fff;font-size:13px;">{{ user.username }}</div>
+        <div style="font-size:11px;color:var(--text2);">Analyst</div>
+      </div>
+    </div>
+    <a href="{% url 'logout' %}" class="btn btn-outline btn-sm w-100">
+      <i class="fas fa-sign-out-alt"></i> Logout
+    </a>
+  </div>
+</aside>
+{% endif %}
+
+<!-- MAIN -->
+<div class="main-content" {% if not user.is_authenticated %}style="margin-left:0"{% endif %}>
+
+  {% if user.is_authenticated %}
+  <div class="topbar">
+    <div class="topbar-title">{% block page_title %}Overview{% endblock %}</div>
+    <div class="topbar-right">
+      <div class="status-badge">
+        <span class="status-dot"></span> System Online
+      </div>
+      <span style="font-family:var(--font-mono);font-size:11px;color:var(--text2);" id="clock"></span>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="page-body">
+    {% for msg in messages %}
+    <div class="alert alert-{{ msg.tags|default:'info' }}">
+      <i class="fas fa-{% if msg.tags == 'success' %}check-circle{% elif msg.tags == 'error' %}exclamation-triangle{% else %}info-circle{% endif %}"></i>
+      {{ msg }}
+    </div>
+    {% endfor %}
+
+    {% block content %}{% endblock %}
+  </div>
+</div>
+
+<script>
+  // Live clock
+  function updateClock() {
+    const el = document.getElementById('clock');
+    if (el) el.textContent = new Date().toLocaleTimeString('en-IN');
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

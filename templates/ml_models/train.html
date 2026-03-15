@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% block title %}Train Model — CloudShield{% endblock %}
+{% block page_title %}<i class="fas fa-brain" style="color:var(--accent);margin-right:8px"></i>Train Model{% endblock %}
+{% block content %}
+<div style="max-width:620px;margin:0 auto;">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><i class="fas fa-cogs"></i> Model Configuration</div>
+    </div>
+
+    {% if not datasets %}
+    <div class="alert alert-warning"><i class="fas fa-exclamation-triangle"></i> No datasets available. <a href="{% url 'upload_dataset' %}" style="color:var(--warn)">Upload a dataset</a> first.</div>
+    {% else %}
+    <form method="post" id="trainForm">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-database"></i> Select Dataset</label>
+        <select name="dataset_id" class="form-control" required>
+          <option value="">— Choose a dataset —</option>
+          {% for ds in datasets %}
+          <option value="{{ ds.pk }}" {% if request.GET.dataset == ds.pk|stringformat:'s' %}selected{% endif %}>
+            {{ ds.name }} ({{ ds.rows }} rows)
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-network-wired"></i> Select Model</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px;">
+          {% for choice in model_choices %}
+          <label style="cursor:pointer;">
+            <input type="radio" name="model_name" value="{{ choice.0 }}" style="display:none" class="model-radio">
+            <div class="model-choice-card" data-key="{{ choice.0 }}">
+              <i class="fas {{ choice.2 }}" style="font-size:22px;margin-bottom:8px;display:block;"></i>
+              <div style="font-family:var(--font-head);font-size:16px;font-weight:700;color:#fff;margin-bottom:4px;">{{ choice.1 }}</div>
+              <div style="font-size:11px;color:var(--text2);">{{ choice.3 }}</div>
+            </div>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div id="trainBtn" style="margin-top:4px;">
+        <button type="submit" class="btn btn-primary w-100" style="padding:13px;font-size:15px;justify-content:center;">
+          <i class="fas fa-play"></i> Start Training
+        </button>
+      </div>
+    </form>
+
+    <div id="trainProgress" style="display:none;text-align:center;padding:30px 0;">
+      <div class="spinner"></div>
+      <div style="font-family:var(--font-mono);color:var(--accent);margin-top:10px;" id="progressText">Initializing...</div>
+      <div class="text-muted" style="font-size:12px;margin-top:6px;">This may take 30–60 seconds</div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Model Info Cards -->
+  <div class="card">
+    <div class="card-title" style="margin-bottom:16px;"><i class="fas fa-info-circle"></i> About the Models</div>
+    <div style="display:grid;gap:12px;">
+      <div style="display:flex;gap:14px;align-items:flex-start;padding:12px;background:var(--bg3);border-radius:4px;">
+        <i class="fas fa-microchip" style="color:var(--accent);margin-top:2px;width:20px;"></i>
+        <div><strong style="color:#fff">CNN</strong> — <span class="text-muted">Convolutional Neural Network. Detects spatial patterns in network log features using MLP layers simulating convolutional behavior.</span></div>
+      </div>
+      <div style="display:flex;gap:14px;align-items:flex-start;padding:12px;background:var(--bg3);border-radius:4px;">
+        <i class="fas fa-wave-square" style="color:var(--accent2);margin-top:2px;width:20px;"></i>
+        <div><strong style="color:#fff">LSTM</strong> — <span class="text-muted">Long Short-Term Memory. Uses Gradient Boosting to model temporal attack sequences and time-based behavior.</span></div>
+      </div>
+      <div style="display:flex;gap:14px;align-items:flex-start;padding:12px;background:var(--bg3);border-radius:4px;">
+        <i class="fas fa-compress-alt" style="color:var(--accent3);margin-top:2px;width:20px;"></i>
+        <div><strong style="color:#fff">Autoencoder</strong> — <span class="text-muted">Random Forest ensemble. Detects anomalies by learning compressed representations of normal vs. attack traffic.</span></div>
+      </div>
+      <div style="display:flex;gap:14px;align-items:flex-start;padding:12px;background:var(--bg3);border-radius:4px;border:1px solid rgba(0,212,255,0.15);">
+        <i class="fas fa-atom" style="color:#fff;margin-top:2px;width:20px;"></i>
+        <div><strong style="color:#fff">Hybrid</strong> — <span class="text-muted">Combines all three architectures in a deep MLP with 4 hidden layers (256→128→64→32 neurons). Best accuracy.</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.model-choice-card {
+  background:var(--bg3);border:2px solid var(--border);border-radius:6px;
+  padding:16px;text-align:center;transition:all 0.2s;
+  color:var(--text2);
+}
+.model-choice-card:hover { border-color:var(--accent); color:var(--accent); }
+.model-choice-card.selected { border-color:var(--accent); background:rgba(0,212,255,0.08); color:var(--accent); }
+</style>
+
+<script>
+// Inject model choices via Django template rendering (we define them here as a workaround)
+// The template tag for-loop approach needs data passed from view, so we handle selection UI here.
+document.querySelectorAll('.model-radio').forEach(radio => {
+  radio.addEventListener('change', () => {
+    document.querySelectorAll('.model-choice-card').forEach(c => c.classList.remove('selected'));
+    radio.closest('label').querySelector('.model-choice-card').classList.add('selected');
+  });
+});
+document.getElementById('trainForm') && document.getElementById('trainForm').addEventListener('submit', function() {
+  document.getElementById('trainBtn').style.display = 'none';
+  document.getElementById('trainProgress').style.display = 'block';
+  const msgs = ['Preprocessing data...','Encoding features...','Splitting train/test...','Training model...','Evaluating performance...','Generating confusion matrix...'];
+  let i = 0;
+  const el = document.getElementById('progressText');
+  const interval = setInterval(() => {
+    if (i < msgs.length) { el.textContent = msgs[i++]; }
+    else { clearInterval(interval); }
+  }, 4000);
+});
+</script>
+{% endblock %}

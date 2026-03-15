@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% block title %}{{ dataset.name }} — CloudShield{% endblock %}
+{% block page_title %}<i class="fas fa-table" style="color:var(--accent);margin-right:8px"></i>{{ dataset.name }}{% endblock %}
+{% block content %}
+
+<div class="flex-between mb-4">
+  <a href="{% url 'list_datasets' %}" class="btn btn-outline btn-sm"><i class="fas fa-arrow-left"></i> Back</a>
+  <div style="display:flex;gap:10px;">
+    <a href="{% url 'train_model' %}?dataset={{ dataset.pk }}" class="btn btn-success btn-sm"><i class="fas fa-brain"></i> Train on this</a>
+    <a href="{% url 'delete_dataset' dataset.pk %}" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
+  </div>
+</div>
+
+<!-- Stats Row -->
+<div class="stats-grid" style="grid-template-columns:repeat(4,1fr)">
+  <div class="stat-card"><div class="stat-value">{{ stats.shape.0 }}</div><div class="stat-label">Rows</div></div>
+  <div class="stat-card"><div class="stat-value">{{ stats.shape.1 }}</div><div class="stat-label">Columns</div></div>
+  <div class="stat-card"><div class="stat-value" style="font-size:22px;color:var(--accent2)">{{ dataset.uploaded_at|date:"d M Y" }}</div><div class="stat-label">Uploaded</div></div>
+  <div class="stat-card">
+    <div class="stat-value" style="font-size:22px">
+      {% for k,v in stats.label_dist.items %}{{ k }}: <span class="text-accent">{{ v }}</span><br>{% endfor %}
+    </div>
+    <div class="stat-label">Label Distribution</div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <!-- Column Info -->
+  <div class="card">
+    <div class="card-header"><div class="card-title"><i class="fas fa-columns"></i> Column Info</div></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Column</th><th>Type</th><th>Nulls</th></tr></thead>
+        <tbody>
+          {% for col in columns %}
+          <tr>
+            <td class="mono">{{ col }}</td>
+            <td><span class="badge badge-info">{{ stats.dtypes|default_if_none:"—" }}</span></td>
+            <td class="mono">{% if col in stats.nulls %}{{ stats.nulls|default_if_none:"0" }}{% else %}0{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Label Distribution Chart -->
+  <div class="card">
+    <div class="card-header"><div class="card-title"><i class="fas fa-chart-pie"></i> Attack Label Distribution</div></div>
+    <canvas id="labelPie" height="230"></canvas>
+  </div>
+</div>
+
+<!-- Data Preview -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title"><i class="fas fa-eye"></i> Data Preview (first 20 rows)</div>
+    <span class="badge badge-info">{{ dataset.rows }} total rows</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>{% for col in columns %}<th>{{ col }}</th>{% endfor %}</tr>
+      </thead>
+      <tbody>
+        {% for row in preview %}
+        <tr>{% for col in columns %}<td {% if col == 'label' %}class="mono" style="color:{% if row|default_if_none:'' == 'Intrusion' %}var(--danger){% elif row|default_if_none:'' == 'Normal' %}var(--accent2){% else %}var(--warn){% endif %}"{% endif %}>{{ row|default_if_none:"—" }}</td>{% endfor %}</tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
+{% block extra_js %}
+<script>
+const labelData = {{ stats.label_dist|safe }};
+const keys = Object.keys(labelData);
+const vals = Object.values(labelData);
+new Chart(document.getElementById('labelPie'), {
+  type: 'doughnut',
+  data: {
+    labels: keys,
+    datasets: [{
+      data: vals,
+      backgroundColor: ['rgba(255,56,96,0.75)','rgba(0,212,255,0.75)','rgba(0,255,157,0.75)','rgba(255,221,87,0.75)','rgba(255,107,53,0.75)'],
+      borderColor: '#111820', borderWidth: 3,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { labels: { color: '#8b949e', font: { family: 'Share Tech Mono', size: 12 }, padding: 14 } } }
+  }
+});
+</script>
+{% endblock %}
